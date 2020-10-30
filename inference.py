@@ -325,7 +325,6 @@ class ExactInference(InferenceModule):
         #P(ghost t2,ghost t1) = dist*oldBeliefs[pos] + newBeliefs[newPos]
         #P(ghost t2,ghost t1) += dist*oldBeliefs[pos]
         
-        pos = self.legalPositions
         import util
         oldBeliefs = self.beliefs.copy()
         newBeliefs = util.Counter()
@@ -360,7 +359,8 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        for pos in self.legalPositions:
+            self.particles.append(self.numParticles/len(self.legalPositions))
 
     def observeUpdate(self, observation, gameState):
         """
@@ -375,7 +375,19 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+        probs = []
+        i = 0
+        for pos in self.legalPositions:
+            #Update belief using online Belief updates
+            #sum of past beliefs (self.beliefs[pos]) * current observation probability 
+            probs.append(self.particles[i] * self.getObservationProb(observation, pacmanPosition, pos, jailPosition))
+            i += 1
+        if (sum(probs) == 0):
+            self.initializeUniformly(gameState)
+        else:
+            self.particles = probs
 
     def elapseTime(self, gameState):
         """
@@ -383,7 +395,23 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newParticles = {}
+        oldParticles = {}
+        i = 0
+        for pos in self.legalPositions:
+            oldParticles[pos] = self.particles[i]
+            newParticles[pos] = 0
+            i += 1
+        for pos in self.legalPositions:
+            newPosAndDist = self.getPositionDistribution(gameState, pos)
+            for newPos, dist in newPosAndDist.items():
+                newParticles[newPos] += dist*oldParticles[i]
+        i = 0
+        prob = []
+        for pos in self.legalPositions:
+            self.particals = newParticles[pos])
+            i += 1
+        
 
     def getBeliefDistribution(self):
         """
