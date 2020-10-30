@@ -144,3 +144,28 @@ class GreedyBustersAgent(BustersAgent):
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
+        import inference
+        likelyPos = []
+        exact = ExactInference(InferenceModule)
+        for i in livingGhosts:
+            likelyPos.append(max(livingGhostPositionDistributions[i]))
+        print(likelyPos)
+        dists = []
+        for pos in likelyPos:
+            dists.append(self.distancer.getDistance(pacmanPosition, pos))
+        dist = min(dists)
+        print(dist)
+        dists = []
+        for action in legal:
+            successorPosition = Actions.getSuccessor(pacmanPosition, action)
+            for pos in likelyPos:
+                dists.append(self.distancer.getDistance(successorPosition, pos))
+
+        distIndex = dists.index(min(dists))
+        legal.pop(len(legal)-1)
+        print(legal)
+        print(pacmanPosition)
+        print(dists)
+        print(legal[distIndex%len(legal)])
+        exact.elapseTime(gameState)
+        return legal[distIndex%len(legal)]
