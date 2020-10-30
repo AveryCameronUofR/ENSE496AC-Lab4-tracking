@@ -143,29 +143,35 @@ class GreedyBustersAgent(BustersAgent):
         livingGhostPositionDistributions = \
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
-        "*** YOUR CODE HERE ***"
-        import inference
-        likelyPos = []
-        exact = ExactInference(InferenceModule)
-        for i in livingGhosts:
-            likelyPos.append(max(livingGhostPositionDistributions[i]))
-        print(likelyPos)
-        dists = []
-        for pos in likelyPos:
-            dists.append(self.distancer.getDistance(pacmanPosition, pos))
-        dist = min(dists)
-        print(dist)
-        dists = []
+        "*** YOUR CODE HERE ***"                  
+        distsAndProb = {}
+        dists = {}
+        #livingGhostPositionDistributions taking the max will yield the same value each 'ghost'
+        # Get the distance to the position from pacman
+        # Weight that position by considering probability that a ghost is there 
+        # Provides a value that makes close moves to high probability worth more
+        for pos, dist in livingGhostPositionDistributions[0].items():
+            distance = self.distancer.getDistance(pacmanPosition, pos)
+            dists[pos] = distance
+            if (distance == 0):
+                distsAndProb[pos] = 0
+            else:
+                distsAndProb[pos] = (dist/distance)
+        #Find the position where probability and distance are maximized
+        maxPos = (0,0)
+        maxVal = 0
+        for pos, value in distsAndProb.items():
+            if (value > maxVal):
+                maxPos = pos
+                maxVal = value
+        #Find the action that minimizes the distance to the maxPosition
+        miniAction = None
+        minDist = 10000000
         for action in legal:
             successorPosition = Actions.getSuccessor(pacmanPosition, action)
-            for pos in likelyPos:
-                dists.append(self.distancer.getDistance(successorPosition, pos))
-
-        distIndex = dists.index(min(dists))
-        legal.pop(len(legal)-1)
-        print(legal)
-        print(pacmanPosition)
-        print(dists)
-        print(legal[distIndex%len(legal)])
-        exact.elapseTime(gameState)
-        return legal[distIndex%len(legal)]
+            distance = self.distancer.getDistance(successorPosition, maxPos)
+            if (distance < minDist):
+                miniAction = action
+                minDist = distance
+        #return the action
+        return miniAction
