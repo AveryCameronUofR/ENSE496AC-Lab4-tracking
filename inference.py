@@ -323,21 +323,18 @@ class ExactInference(InferenceModule):
         "*** YOUR CODE HERE ***"
         #P(ghost t2, ghost t1) =  P(ghost t2 | ghost t1)*P(ghost t1) + P(ghost t2)
         #P(ghost t2,ghost t1) = dist*oldBeliefs[pos] + newBeliefs[newPos]
+        #P(ghost t2,ghost t1) += dist*oldBeliefs[pos]
+        
         pos = self.legalPositions
         import util
+        oldBeliefs = self.beliefs.copy()
         newBeliefs = util.Counter()
-        for pos in self.legalPositions:
-            newGameState = self.setGhostPosition(gameState, pos, 1)
-            newPosAndDist = self.getPositionDistribution(newGameState, pos)
-            #print(newPosDist)
+        for pos in self.allPositions:
+            newPosAndDist = self.getPositionDistribution(gameState, pos)
             for newPos, dist in newPosAndDist.items():
-                #print("Prob: " + str((dist*self.beliefs[pos])))
-                #print("New Belief: " + str(newBeliefs[newPos]))
-                newBeliefs[newPos] += dist*self.beliefs[pos]
-        newBeliefs.normalize()
+                newBeliefs[newPos] += dist*oldBeliefs[pos]
         self.beliefs = newBeliefs
-
-        #self.beliefs.normalize()
+        self.beliefs.normalize()
     def getBeliefDistribution(self):
         return self.beliefs
 
