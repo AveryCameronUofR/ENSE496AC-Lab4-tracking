@@ -379,17 +379,17 @@ class ParticleFilter(InferenceModule):
         pacmanPosition = gameState.getPacmanPosition()
         jailPosition = self.getJailPosition()
         
-        particle_observations = DiscreteDistribution()
+        particleLocs = DiscreteDistribution()
         #Weights occur once, = P(e|x) = Observation
         weights = DiscreteDistribution()
         
         #Get the Particle count for each position
         for particlePos in self.particles:
-            particle_observations[particlePos] += 1
+            particleLocs[particlePos] += 1
 
         #Calculate the weights: = P(e|x) = Particle count * Observation
         for pos in self.legalPositions:
-            weights[pos] = particle_observations[pos]*self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
+            weights[pos] = particleLocs[pos]*self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
         weights.normalize()
 
         #if the weights are 0, reinitialize
@@ -409,31 +409,32 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        """
-        import util
-        oldBeliefs = self.beliefs.copy()
-        newBeliefs = util.Counter()
-        for pos in self.allPositions:
-            newPosAndDist = self.getPositionDistribution(gameState, pos)
+        #create new particle variable
+        particleLocs = DiscreteDistribution()
+        #track particle positions
+        for particlePos in self.particles:
+            particleLocs[particlePos] += 1
+        #move particles and update distributions
+        for particlePos in self.particles:
+            #remove Particle from current pos
+            particleLocs[particlePos] -= 1
+            #Get new positions and distributions(probabilities)
+            newPosAndDist = self.getPositionDistribution(gameState, particlePos)
             for newPos, dist in newPosAndDist.items():
-                newBeliefs[newPos] += dist*oldBeliefs[pos]
-        self.beliefs = newBeliefs
-        self.beliefs.normalize()
-        """
-        newParticles = {}
-        oldParticles = {}
-        i = 0
-        for pos in self.legalPositions:
-            oldParticles[pos] = self.particles[i]
-            newParticles[pos] = 0
-            i += 1
-        for pos in self.legalPositions:
-            newPosAndDist = self.getPositionDistribution(gameState, pos)
-            for newPos, dist in newPosAndDist.items():
-                newParticles[newPos] += dist*oldParticles[i]
-        for pos in self.legalPositions:
-            self.particles = newParticles[pos]
+                #add prob to new location
+                particleLocs[newPos] += dist
         
+        #set unused values and negatives to 0 
+        for pos in self.legalPositions:
+            if(pos not in particleLocs or particleLocs[pos] < 0):
+                particleLocs[pos] = 0
+        particleLocs.normalize()
+
+        self.particles = []
+        for pos in self.legalPositions:
+            #add # of particles based on available particles and calculated movements
+            for _ in range(int(self.numParticles*particleLocs[pos])):
+                self.particles.append(pos)
 
     def getBeliefDistribution(self):
         """
@@ -478,7 +479,9 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        for pos in self.legalPositions:
+            for _ in range(int(self.numParticles/len(self.legalPositions))):
+                self.particles.append(pos)
 
     def addGhostAgent(self, agent):
         """
