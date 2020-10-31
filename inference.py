@@ -517,8 +517,16 @@ class JointParticleFilter(ParticleFilter):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-
+        pacmanPosition = gameState.getPacmanPosition()
+        weights = DiscreteDistribution()
+        for i in range(self.numGhosts):
+            jailPosition = self.getJailPosition(i)
+            for pos in self.legalPositions:
+                weights[pos] = particleLocs[pos]*self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
+        #if the weights are 0, reinitialize
+        if (weights.total() == 0):
+            self.initializeUniformly(gameState)
+            return
     def elapseTime(self, gameState):
         """
         Sample each particle's next state based on its current state and the
