@@ -474,14 +474,17 @@ class JointParticleFilter(ParticleFilter):
     def initializeUniformly(self, gameState):
         """
         Initialize particles to be consistent with a uniform prior. Particles
-        should be evenly distributed across positions in order to ensure a
+        should be evenly distributed across  positions in order to ensure a
         uniform prior.
+
+        **Each particle will represent a tuple of ghost positions 
+        that is a sample of where all the ghosts are at the present time.**
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
         for pos in self.legalPositions:
             for _ in range(int(self.numParticles/len(self.legalPositions))):
-                self.particles.append(pos)
+                self.particles.append((pos,pos))
 
     def addGhostAgent(self, agent):
         """
