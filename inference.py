@@ -327,7 +327,7 @@ class ExactInference(InferenceModule):
         
         import util
         oldBeliefs = self.beliefs.copy()
-        newBeliefs = util.Counter()
+        newBeliefs = DiscreteDistribution()
         for pos in self.allPositions:
             newPosAndDist = self.getPositionDistribution(gameState, pos)
             for newPos, dist in newPosAndDist.items():
@@ -360,7 +360,8 @@ class ParticleFilter(InferenceModule):
         self.particles = []
         "*** YOUR CODE HERE ***"
         for pos in self.legalPositions:
-            self.particles.append(self.numParticles/len(self.legalPositions))
+            for _ in range(int(self.numParticles/len(self.legalPositions))):
+                self.particles.append(pos)
 
     def observeUpdate(self, observation, gameState):
         """
@@ -377,17 +378,30 @@ class ParticleFilter(InferenceModule):
         "*** YOUR CODE HERE ***"
         pacmanPosition = gameState.getPacmanPosition()
         jailPosition = self.getJailPosition()
-        probs = []
-        i = 0
+        
+        particle_observations = DiscreteDistribution()
+        #Weights occur once, = P(e|x) = Observation
+        weights = DiscreteDistribution()
+        
+        #Get the Particle count for each position
+        for particlePos in self.particles:
+            particle_observations[particlePos] += 1
+
+        #Calculate the weights: = P(e|x) = Particle count * Observation
         for pos in self.legalPositions:
-            #Update belief using online Belief updates
-            #sum of past beliefs (self.beliefs[pos]) * current observation probability 
-            probs.append(self.particles[i] * self.getObservationProb(observation, pacmanPosition, pos, jailPosition))
-            i += 1
-        if (sum(probs) == 0):
+            weights[pos] = particle_observations[pos]*self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
+        weights.normalize()
+
+        #if the weights are 0, reinitialize
+        if (weights.total() == 0):
             self.initializeUniformly(gameState)
-        else:
-            self.particles = probs
+            return
+        #update self.particles
+        self.particles = []
+        for pos in self.legalPositions:
+            #add # of particles based on available particles and calculated weights
+            for _ in range(int(self.numParticles*weights[pos])):
+                self.particles.append(pos)
 
     def elapseTime(self, gameState):
         """
@@ -395,6 +409,17 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
+        """
+        import util
+        oldBeliefs = self.beliefs.copy()
+        newBeliefs = util.Counter()
+        for pos in self.allPositions:
+            newPosAndDist = self.getPositionDistribution(gameState, pos)
+            for newPos, dist in newPosAndDist.items():
+                newBeliefs[newPos] += dist*oldBeliefs[pos]
+        self.beliefs = newBeliefs
+        self.beliefs.normalize()
+        """
         newParticles = {}
         oldParticles = {}
         i = 0
@@ -406,11 +431,8 @@ class ParticleFilter(InferenceModule):
             newPosAndDist = self.getPositionDistribution(gameState, pos)
             for newPos, dist in newPosAndDist.items():
                 newParticles[newPos] += dist*oldParticles[i]
-        i = 0
-        prob = []
         for pos in self.legalPositions:
-            self.particals = newParticles[pos])
-            i += 1
+            self.particles = newParticles[pos]
         
 
     def getBeliefDistribution(self):
@@ -422,7 +444,13 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newBeliefs = DiscreteDistribution()
+        #get the positions stored in particles to count
+        for particlePos in self.particles:
+            newBeliefs[particlePos] += 1
+        #have to normalize before returning
+        newBeliefs.normalize()
+        return newBeliefs
 
 
 class JointParticleFilter(ParticleFilter):
