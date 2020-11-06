@@ -482,9 +482,13 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        for pos in self.legalPositions:
-            for _ in range(int(self.numParticles/len(self.legalPositions))):
-                self.particles.append((pos,pos))
+        import itertools
+        positions = itertools.product(self.legalPositions, repeat=self.numGhosts)
+        positions = list(positions)
+        random.shuffle(positions)
+        for pos1, pos2 in positions:
+            for _ in range(int(self.numParticles/len(positions))):
+                self.particles.append((pos1, pos2))
 
     def addGhostAgent(self, agent):
         """
@@ -519,14 +523,39 @@ class JointParticleFilter(ParticleFilter):
         "*** YOUR CODE HERE ***"
         pacmanPosition = gameState.getPacmanPosition()
         weights = DiscreteDistribution()
-        for i in range(self.numGhosts):
-            jailPosition = self.getJailPosition(i)
-            for pos in self.legalPositions:
-                weights[pos] = particleLocs[pos]*self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
+        particleLocs = DiscreteDistribution()
+
+        
+        weights = DiscreteDistribution()
+        particleDict = {}
+        #Get the Particle count for each position
+        for particlePos in self.particles:
+            particleLocs[particlePos] += 1
+            particleDict[particlePos] = particleLocs[particlePos]
+
+        #P(e1a|x1a)*P(e1b|x1b)*... = Observations
+        #weights = Particle count * Observations
+        for pos in particleDict:
+            jProb = 1
+            for ghost in range(self.numGhosts):
+                jailPosition = self.getJailPosition(ghost)
+                #get the observation for the ghost and the ghosts possible position
+                jProb *= self.getObservationProb(observation[ghost], pacmanPosition, pos[ghost], jailPosition)
+            weights[pos] = jProb *particleLocs[pos]
+        
+        weights.normalize()
         #if the weights are 0, reinitialize
         if (weights.total() == 0):
             self.initializeUniformly(gameState)
             return
+        
+        #update self.particles
+        self.particles = []
+        for pos in particleDict:
+            #add # of particles based on available particles and calculated weights
+            for _ in range(int(self.numParticles*weights[pos])):
+                self.particles.append(pos)
+        
     def elapseTime(self, gameState):
         """
         Sample each particle's next state based on its current state and the
