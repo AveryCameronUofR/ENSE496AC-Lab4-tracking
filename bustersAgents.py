@@ -143,7 +143,7 @@ class GreedyBustersAgent(BustersAgent):
         livingGhostPositionDistributions = \
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
-        "*** YOUR CODE HERE ***"                  
+        "*** YOUR CODE HERE ***"
         distsAndProb = {}
         dists = {}
         #livingGhostPositionDistributions taking the max will yield the same value each 'ghost'
