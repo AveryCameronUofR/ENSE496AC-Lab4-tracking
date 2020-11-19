@@ -186,6 +186,7 @@ class InferenceModule:
         trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
         observationProb = busters.getObservationProbability(noisyDistance, trueDistance)
         return observationProb
+
     def setGhostPosition(self, gameState, ghostPosition, index):
         """
         Set the position of the ghost for this inference module to the specified
@@ -323,6 +324,7 @@ class ExactInference(InferenceModule):
                 newBeliefs[newPos] += dist*oldBeliefs[pos]
         self.beliefs = newBeliefs
         self.beliefs.normalize()
+
     def getBeliefDistribution(self):
         return self.beliefs
 
@@ -463,21 +465,18 @@ class JointParticleFilter(ParticleFilter):
     def initializeUniformly(self, gameState):
         """
         Initialize particles to be consistent with a uniform prior. Particles
-        should be evenly distributed across  positions in order to ensure a
+        should be evenly distributed across positions in order to ensure a
         uniform prior.
-
-        **Each particle will represent a tuple of ghost positions 
-        that is a sample of where all the ghosts are at the present time.**
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
         import itertools
-        positions = itertools.product(self.legalPositions, self.legalPositions)
+        positions = itertools.product(self.legalPositions, repeat=self.numGhosts)
         positions = list(positions)
         random.shuffle(positions)
-        for pos1, pos2 in positions:
-            for _ in range(int(self.numParticles/len(positions))):
-                self.particles.append((pos1, pos2))
+        while (len(self.particles) < self.numParticles):
+            self.particles = self.particles + positions
+        self.particles = self.particles[:self.numParticles]
 
     def addGhostAgent(self, agent):
         """
@@ -544,13 +543,12 @@ class JointParticleFilter(ParticleFilter):
             #add # of particles based on available particles and calculated weights
             for _ in range(int(self.numParticles*weights[pos])):
                 self.particles.append(pos)
-        
+
     def elapseTime(self, gameState):
         """
         Sample each particle's next state based on its current state and the
         gameState.
         """
-
         newParticles = []
         for oldParticle in self.particles:
             newParticle = list(oldParticle)  # A list of ghost positions
@@ -560,6 +558,7 @@ class JointParticleFilter(ParticleFilter):
             for ghost in range(self.numGhosts):
                 newPosAndDist = self.getPositionDistribution(gameState, newParticle, ghost, self.ghostAgents[ghost])
                 newParticle[ghost] = newPosAndDist.sample()
+
             """*** END YOUR CODE HERE ***"""
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
