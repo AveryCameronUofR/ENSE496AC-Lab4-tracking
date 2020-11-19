@@ -105,22 +105,11 @@ class DiscreteDistribution(dict):
         "*** YOUR CODE HERE ***"
         import random
         total = self.total()
-        if (total == 1):
-            randomVal = random.random()
-            currSum = 0
-            for key, value in self.items():
-                newSum = currSum + value
-                if (randomVal in range(currSum, newSum) and value != 0):
-                    return key
-                currSum = newSum
-        else:
-            randomVal = random.randrange(0, total)
-            currSum = 0
-            for key, value in self.items():
-                newSum = currSum + value
-                if (randomVal in range(currSum, newSum) and value != 0):
-                    return key
-                currSum = newSum
+        randomVal = random.random()*total
+        for key, value in self.items():
+            randomVal -= value
+            if (randomVal <0):
+                return key
 
 
 class InferenceModule:
@@ -483,7 +472,7 @@ class JointParticleFilter(ParticleFilter):
         self.particles = []
         "*** YOUR CODE HERE ***"
         import itertools
-        positions = itertools.product(self.legalPositions, repeat=self.numGhosts)
+        positions = itertools.product(self.legalPositions, self.legalPositions)
         positions = list(positions)
         random.shuffle(positions)
         for pos1, pos2 in positions:
@@ -561,14 +550,16 @@ class JointParticleFilter(ParticleFilter):
         Sample each particle's next state based on its current state and the
         gameState.
         """
+
         newParticles = []
         for oldParticle in self.particles:
             newParticle = list(oldParticle)  # A list of ghost positions
 
             # now loop through and update each entry in newParticle...
             "*** YOUR CODE HERE ***"
-            raiseNotDefined()
-
+            for ghost in range(self.numGhosts):
+                newPosAndDist = self.getPositionDistribution(gameState, newParticle, ghost, self.ghostAgents[ghost])
+                newParticle[ghost] = newPosAndDist.sample()
             """*** END YOUR CODE HERE ***"""
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
