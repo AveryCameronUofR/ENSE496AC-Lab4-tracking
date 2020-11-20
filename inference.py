@@ -103,12 +103,16 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        import random
         total = self.total()
-        randomVal = random.random()*total
-        for key, value in self.items():
-            randomVal -= value
-            if (randomVal <0):
+        if total != 1:
+            self.normalize()
+        randomVal = random.random()
+        currVal = 0
+        for key,value in self.items():
+            currVal += value
+            if (randomVal > currVal):
+                continue
+            else:
                 return key
 
 
